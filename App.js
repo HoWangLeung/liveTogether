@@ -1,20 +1,25 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaView, StyleSheet, Text, View } from "react-native";
+import SignInScreen from "./src/screens/SignInScreen/SignInScreen";
+import SignUpScreen from "./src/screens/SignUpScreen/SignUpScreen";
+import ConfirmEmailScreen from "./src/screens/ConfirmEmailScreen/ConfirmEmailScreen";
+import ForgetPasswordScreen from "./src/screens/ForgotPasswordScreen/ForgetPasswordScreen";
+import Navigation from "./src/navigation";
+import Home from './src/screens/HomeScreen'
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaView style={styles.container}>
+      {/* <SignUpScreen/> */}
+      {/* <ForgetPasswordScreen/>
+       */}
+      <Navigation />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#F9FBFC",
   },
 });
