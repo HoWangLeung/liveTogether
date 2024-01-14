@@ -1,5 +1,12 @@
 // import { StatusBar } from "expo-status-bar";
-import { SafeAreaView, StyleSheet, Text, View } from "react-native";
+import {
+  Keyboard,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableWithoutFeedback,
+  View,
+} from "react-native";
 import SignInScreen from "./src/screens/SignInScreen/SignInScreen";
 import SignUpScreen from "./src/screens/SignUpScreen/SignUpScreen";
 import ConfirmEmailScreen from "./src/screens/ConfirmEmailScreen/ConfirmEmailScreen";
@@ -24,15 +31,13 @@ const Tab = createBottomTabNavigator();
 export default function App() {
   return (
     <Provider store={Store}>
-      <LoginProvider>
-        <SafeAreaView style={styles.container}>
-          <PaperProvider>
-            <NavigationContainer>
-              <MainNavigator />
-            </NavigationContainer>
-          </PaperProvider>
-        </SafeAreaView>
-      </LoginProvider>
+      <SafeAreaView style={styles.container}>
+        <PaperProvider>
+          <NavigationContainer>
+            <MainNavigator />
+          </NavigationContainer>
+        </PaperProvider>
+      </SafeAreaView>
     </Provider>
   );
 }

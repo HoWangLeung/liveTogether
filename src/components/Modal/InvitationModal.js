@@ -11,7 +11,6 @@ import { useDispatch } from "react-redux";
 import { setInvitationModal } from "../../redux/actions";
 
 const InvitationModal = ({ visible }) => {
-  
   const dispatch = useDispatch();
   const showModal = () => {
     dispatch(setInvitationModal(true));
@@ -21,25 +20,26 @@ const InvitationModal = ({ visible }) => {
   };
 
   return (
-     
-     
-          <Modal
-            visible={visible.isOpen}
-            onDismiss={hideModal}
-            contentContainerStyle={{
-              backgroundColor: "pink",
-              padding: 20,
-              height:'100%',
-              alignSelf: "center",
-            }}
-          >
-            <ScrollView>
-              <Text>Example Modal. Click outside this area to dismiss.</Text>
-              <Button onPress={hideModal}>OK</Button>
-            </ScrollView>
-          </Modal>
-   
-    
+    <Portal>
+      <Modal
+        visible={visible.isOpen}
+        onDismiss={hideModal}
+        contentContainerStyle={{
+          backgroundColor: "white",
+          padding: 20,
+          margin: 30,
+          alignItems: "center",
+          // height: 120,
+          // alignSelf: "center",
+          borderRadius: 20,
+        }}
+      >
+        <ScrollView>
+          <Text>Example Modal. Click outside this area to dismiss.</Text>
+          <Button onPress={hideModal}>OK</Button>
+        </ScrollView>
+      </Modal>
+    </Portal>
   );
 };
 

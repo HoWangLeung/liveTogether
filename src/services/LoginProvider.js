@@ -4,31 +4,37 @@ import Auth from "../services/Auth";
 const LoginContext = createContext();
 
 const LoginProvider = ({ children }) => {
+  
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userDetail, setUserDetail] = useState({});
- 
 
   useEffect(() => {
+    
     fetchUser();
 
     return () => {};
   }, []);
 
   const fetchUser = async () => {
-    
-    let token = await AsyncStorage.getItem("accessToken");
-    if (token) {
-      let data = await Auth.getUserProfile(token);
+ 
+  
+      let data = await Auth.getUserProfile();
       
-      
+
       setUserDetail(data);
       setIsLoggedIn(true);
-    }
+  
   };
 
   return (
     <LoginContext.Provider
-      value={{ isLoggedIn, setIsLoggedIn, userDetail, setUserDetail,fetchUser }}
+      value={{
+        isLoggedIn,
+        setIsLoggedIn,
+        userDetail,
+        setUserDetail,
+        fetchUser,
+      }}
     >
       {children}
     </LoginContext.Provider>

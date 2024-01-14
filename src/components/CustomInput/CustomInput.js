@@ -1,30 +1,53 @@
-import { View, Text, StyleSheet, TextInput } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import React from "react";
+import commonStyles from "../../utils/CommonStyle";
+import { HelperText, TextInput } from "react-native-paper";
 
-const CustomInput = ({ value, setValue,placeholder,secureTextEntry }) => {
+export function CustomInput({
+  handleChange,
+  hasError,
+  value,
+  visible,
+  errors,
+  label,
+  helperText,
+  name
+}) {
+
   return (
-    <View style={styles.container}>
+    <>
       <TextInput
-        value={value}
-        onChange={setValue}
-        style={styles.input}
-        placeholder={placeholder}
-        secureTextEntry={secureTextEntry}
+        style={styles.inputSpace}
+        label={label}
+        value={String(value)}
+        mode="outlined"
+        name={name}
+        onChangeText={(text)=>handleChange(name.toLowerCase(),text)}
       />
-    </View>
+      <HelperText style={styles.helperText} type="error" visible={visible}>
+        {helperText}
+      </HelperText>
+    </>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
+    padding: 20,
     backgroundColor: "white",
-    width: "100%",
-    borderColor: "#e8e8e8",
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginVertical: 5,
+    height: "100%",
+    alignItems: "center",
   },
-  input: {},
+  surface: {
+    padding: 8,
+    height: 50,
+    margin: 20,
+    width: "90%",
+    alignItems: "flex-start",
+    justifyContent: "center",
+    borderRadius: 15,
+  },
+  inputSpace: commonStyles.inputSpace,
+  sectionTitle: commonStyles.sectionTitle,
+  helperText: commonStyles.helperText,
 });
-export default CustomInput;

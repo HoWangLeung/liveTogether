@@ -2,7 +2,7 @@
   "expo": {
     "name": "Live Together",
     "slug": "liveTogether",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -32,6 +32,9 @@
       "eas": {
         "projectId": "d6bcb4e9-0b70-4c03-9574-aa9d8f56c8f7"
       }
-    }
-  }
+    },
+    "sdkVersion": "49.0.0",
+    "entryPoint": ".vscode/exponentIndex.js"
+  },
+  "name": "livetogether"
 }

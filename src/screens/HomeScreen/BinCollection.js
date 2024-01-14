@@ -18,10 +18,19 @@ import useBin from "../../services/useBin";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import commonStyles from "../../utils/CommonStyle";
+import { useDispatch, useSelector } from 'react-redux';
+import { setPopUpModal } from "../../redux/actions";
+import CustomTaskCard from "../../components/CustomCardContent/CustomTaskCard";
+import useTasks from "../../services/useTasks";
+import { SUCCESS } from "../../utils/Constants";
+import Utils from "../../utils/Utils";
 // const BASE_URL="test"
 const BinCollection = ({ bins, setBins, groupInfo }) => {
+  const { isLoggedIn, userDetail } = useSelector((state) => state.userReducer);
+  const { fetchBinTasksAndDispatch, completeTask } = useTasks();
   const navigation = useNavigation();
   const [current, setCurrent] = useState();
+  const dispatch = useDispatch();
 
   let [modal, setModal] = useState({
     isOpen: false,
@@ -33,34 +42,22 @@ const BinCollection = ({ bins, setBins, groupInfo }) => {
   let [interval, setInterval] = useState(14);
 
   const onDonePressed = async (e, i) => {
-    let token = await AsyncStorage.getItem("accessToken");
-    const config = {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    };
-
-    let binId = bins[i].id;
-    if (!groupInfo || !groupInfo.id) {
-      return;
-    }
-    axios
-      .post(
-        `${BASE_URL}/liveTogether/api/bins/binCollection/${binId}`,
-        {},
-        config
-      )
-      // .then(res=> res.json())
-      .then((result) => {
-        fetchBins({
-          groupId: groupInfo.id,
-        })
-          .then((d) => {
-            setBins([...d]);
-          })
-          .catch((e) => {});
-      })
-      .catch((e) => {});
+    const task = bins[i];
+    const taskId = task.id;
+    let userId = userDetail.id;
+    console.log(taskId, userId);
+    completeTask(taskId, userId).then(() => {
+      fetchBinTasksAndDispatch(userDetail.group.id).then((res) => {
+        setBins(res.data);
+        Utils.showPopUp(
+          dispatch,
+          SUCCESS,
+          true,
+          "Successfully Completed",
+          `${userDetail.username} has been awarded ${task.score} points`
+        );
+      });
+    });
   };
 
   const hideModal = () => {
@@ -105,22 +102,20 @@ const BinCollection = ({ bins, setBins, groupInfo }) => {
     return (
       <View>
         <Text style={styles.titleLarge} variant="titleLarge">
-          Bin Collection
+          Council Bin Collection
         </Text>
         <View style={[styles.container]}>
           {bins &&
             bins.map((item, i) => (
-              <CustomCardContent
-                groupInfo={groupInfo}
-                onEditPressed={(e) => onEditPressed(e, i)}
-                onDonePressed={onDonePressed}
-                key={item.id}
-                i={i}
-                item={item}
-                type="binCollection"
-                modal={modal}
-                hideModal={hideModal}
-              />
+              <CustomTaskCard
+              groupInfo={groupInfo}
+              onEditPressed={(e) => onEditPressed(e, i)}
+              onDonePressed={onDonePressed}
+              key={item.id}
+              i={i}
+              item={item}
+              type="binCollection"
+            />
             ))}
         </View>
       </View>

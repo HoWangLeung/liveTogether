@@ -13,24 +13,48 @@ import {
 import { useLogin } from "../../services/LoginProvider";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect } from "react/cjs/react.production.min";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import InvitationModal from "../../components/Modal/InvitationModal";
 import { useDispatch, useSelector } from "react-redux";
-import { setGroupInfo, setInvitationModal } from "../../redux/actions";
+import {
+  setGroupInfo,
+  setInvitationModal,
+  setLoginDetail,
+  setPopUpDialog,
+  setPopUpModal,
+} from "../../redux/actions";
 import useGroup from "../../services/useGroup";
 import { useState } from "react";
 import * as Clipboard from "expo-clipboard";
 import Auth from "../../services/Auth";
+import useGroupUser from "../../services/useGroupUser";
+import commonStyles from "../../utils/CommonStyle";
+import PopUpModal from "../../components/Modal/PopUpModal";
+import SignInScreen from "../SignInScreen/SignInScreen";
+import PopUpDialog from "../../components/Modal/PopUpDialog";
 
 const ProfileScreen = () => {
+  const { isLoggedIn, userDetail } = useSelector((state) => state.userReducer);
+  const navigation = useNavigation();
   const dispatch = useDispatch();
-  const { isLoggedIn, setIsLoggedIn, userDetail, setUserDetail, fetchUser } =
-    useLogin();
+
   const { isOpen } = useSelector((state) => state.userReducer);
 
-  const { groupInfo } = useGroup(userDetail.id);
-
   const [icon, setIcon] = useState("content-copy");
+
+  const userGroupService = useGroupUser();
+
+  const popUpModalConfig = useSelector(
+    (state) => state.profileScreenReducer.popUpModalConfig
+  );
+
+  const popUpDialogConfig = useSelector(
+    (state) => state.profileScreenReducer.popUpDialogConfig
+  );
+
+  const { groupInfo } = useSelector((state) => {
+    return state.groupReducer;
+  });
 
   const showModal = () => {
     dispatch(setInvitationModal(true));
@@ -42,21 +66,27 @@ const ProfileScreen = () => {
     }, 300);
   };
 
-  useFocusEffect(
-    React.useCallback(() => {
-      fetchUser();
+  // useFocusEffect(
+  //   React.useCallback(() => {
+  //     Auth.getUserProfile();
 
-      return () => {};
-    }, [])
-  );
+  //     return () => {};
+  //   }, [])
+  // );
   const signOut = async () => {
     let token = await AsyncStorage.getItem("accessToken");
     if (token) {
       await AsyncStorage.removeItem("accessToken");
-      setIsLoggedIn(false);
-      setUserDetail({});
+      dispatch(
+        setLoginDetail({
+          isLoggedIn: false,
+          userDetail: {},
+        })
+      );
       dispatch(setGroupInfo({}));
+      navigation.navigate("SignIn", { screen: "SignIn" });
     }
+    console.clear();
   };
   const getAvatarLabel = (userDetail) => {
     if (userDetail && userDetail.email && userDetail.email[0]) {
@@ -65,12 +95,88 @@ const ProfileScreen = () => {
     return "NO";
   };
 
+  const onPressLeaveGroup = () => {
+    dispatch(
+      setPopUpDialog({
+        visible: true,
+        message: "Are you sure you want to leave the group?",
+        type: "warning",
+        onDonePressed: confirmLeaveGroup,
+      })
+    );
+  };
+
+  const confirmLeaveGroup = () => {
+    userGroupService
+      .exitGroup(userDetail.id, groupInfo.code)
+      .then(() => {
+        dispatch(
+          setPopUpDialog({
+            visible: false,
+            message: "Are you sure you want to leave the group?",
+            type: "warning",
+            onDonePressed: confirmLeaveGroup,
+          })
+        );
+        signOut();
+        dispatch(
+          setPopUpModal({
+            visible: true,
+            message: "You have left the group.",
+            type: "success",
+          })
+        );
+      })
+
+      .catch((e) => {
+        alert(e.response.data.message);
+      });
+  };
+
+  const handleDeleteAccount = () => {
+    dispatch(
+      setPopUpDialog({
+        visible: true,
+        message: "Are you sure you want to delete your account?",
+        type: "warning",
+        onDonePressed: confirmDeleteAccount,
+      })
+    );
+  };
+
+  const confirmDeleteAccount = () => {
+    userGroupService
+      .deleteAccount(userDetail.id)
+      .then(() => {
+        signOut();
+      })
+      .catch((e) => {
+        alert(e.response.data.message);
+      });
+  };
+
+  const handleEditGroupAndUser = () => {
+    navigation.navigate("EditGroupAndUserScreen");
+  };
+
+  const handleChangePassword = () => {
+    navigation.navigate("ChangePasswordScreen");
+  };
+
   return (
     <ScrollView>
       <View style={styles.root}>
         <Text style={[styles.sectionTitle, { marginTop: 0 }]}>About You</Text>
         <View style={{ alignItems: "center", margin: 10 }}>
-          <Avatar.Text size={150} label={getAvatarLabel(userDetail)} />
+          <Avatar.Text
+            style={{
+              backgroundColor: userDetail.avatarColor
+                ? userDetail.avatarColor
+                : "#F44336",
+            }}
+            size={150}
+            label={getAvatarLabel(userDetail)}
+          />
         </View>
         <View style={{ alignItems: "center", margin: 10 }}>
           <Text style={{ margin: 5 }}>{userDetail.username}</Text>
@@ -79,7 +185,26 @@ const ProfileScreen = () => {
             {userDetail.group ? userDetail.group.name : "No Group"}
           </Text>
         </View>
-        <Text style={styles.sectionTitle}>Members</Text>
+
+        <Text style={styles.sectionTitle}>General</Text>
+        <Button style={{ marginTop: 10 }} onPress={handleEditGroupAndUser}>
+          Edit General Information
+        </Button>
+
+        <Button style={{ marginTop: 10 }} onPress={handleChangePassword}>
+          Change Password
+        </Button>
+
+        <PopUpModal config={popUpModalConfig} />
+        <PopUpDialog config={popUpDialogConfig} />
+        <Button
+          style={{ marginTop: 10 }}
+          textColor="red"
+          onPress={handleDeleteAccount}
+        >
+          Delete Account
+        </Button>
+        {groupInfo.id && <Text style={styles.sectionTitle}>Members</Text>}
         {groupInfo && groupInfo.users && (
           <View
             style={{
@@ -89,21 +214,32 @@ const ProfileScreen = () => {
               alignItems: "center",
               justifyContent: "center",
               marginTop: 15,
+              flexWrap: "wrap",
             }}
           >
             {groupInfo.users.map((user) => {
               return (
                 <View
                   key={user.id}
-                  style={{ alignItems: "center", margin: 10 }}
+                  style={{ alignItems: "center", margin: 10, flexBasis: "20%" }}
                 >
-                  <Avatar.Text size={40} label={user.email[0].toUpperCase()} />
+                  <Avatar.Text
+                    style={{
+                      backgroundColor: user.avatarColor
+                        ? user.avatarColor
+                        : "#F44336",
+                    }}
+                    size={40}
+                    label={user.email[0].toUpperCase()}
+                  />
                 </View>
               );
             })}
           </View>
         )}
-        <Text style={styles.sectionTitle}>Group Management</Text>
+        {groupInfo.id && (
+          <Text style={styles.sectionTitle}>Group Management</Text>
+        )}
 
         <Portal>
           <Modal
@@ -118,26 +254,26 @@ const ProfileScreen = () => {
             }}
           >
             <View>
-              <Text>Share the code to your friends</Text>
-              <Text>They can use the code to join the group</Text>
-
+              <Text style={styles.textSpace}>
+                Share the code with your friends.
+              </Text>
+              <Text style={styles.textSpace}>
+                They can use the code to join the group after downloading the
+                app.
+              </Text>
               <Chip
+                style={styles.textSpace}
                 closeIcon={icon}
                 onClose={async () => {
-                  console.log("trying ");
                   await Clipboard.setStringAsync(groupInfo.code);
-                  console.log("completed");
+
                   setIcon("check-circle");
                 }}
               >
                 {groupInfo.code}
               </Chip>
               <View style={{ alignItems: "center", marginTop: 20 }}>
-                <Button
-                  style={{ width: 80 }}
-                  mode="outlined"
-                  onPress={hideModal}
-                >
+                <Button mode="contained" onPress={hideModal}>
                   OK
                 </Button>
               </View>
@@ -145,20 +281,23 @@ const ProfileScreen = () => {
           </Modal>
         </Portal>
 
-        <Button
-          style={{ marginTop: 10 }}
-          onPress={() => dispatch(setInvitationModal(true))}
-        >
-          Invite To the Group
-        </Button>
-
-        <Button
-          textColor="red"
-          style={{ marginTop: 0 }}
-          onPress={() => dispatch(setInvitationModal(true))}
-        >
-          Leave Group
-        </Button>
+        {groupInfo && groupInfo.id && (
+          <>
+            <Button
+              style={{ marginTop: 10 }}
+              onPress={() => dispatch(setInvitationModal(true))}
+            >
+              Invite To the Group
+            </Button>
+            <Button
+              textColor="red"
+              style={{ marginTop: 0 }}
+              onPress={onPressLeaveGroup}
+            >
+              Leave Group
+            </Button>
+          </>
+        )}
 
         <View style={{ alignItems: "center", marginTop: 10 }}>
           <Button mode="contained" title="Log out" onPress={signOut}>
@@ -179,10 +318,6 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     height: "100%",
   },
-  sectionTitle: {
-    marginRight: "auto",
-    fontWeight: 600,
-    fontSize: 20,
-    marginTop: 10,
-  },
+  sectionTitle: commonStyles.sectionTitle,
+  textSpace: commonStyles.textSpace,
 });

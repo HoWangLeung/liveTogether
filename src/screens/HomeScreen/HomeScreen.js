@@ -21,50 +21,63 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import InvitationModal from "../../components/Modal/InvitationModal";
 import { useDispatch, useSelector } from "react-redux";
 import groupReducer from "../../redux/groupReducer";
-import { setInvitationModal } from "../../redux/actions";
+import Animated from "react-native-reanimated";
+import {
+  FadeIn,
+ 
+} from "react-native-reanimated";
+import {
+  setGroupInfo,
+  setInvitationModal,
+  setLoginDetail,
+} from "../../redux/actions";
 import useGroup from "../../services/useGroup";
+import PopUpModal from "../../components/Modal/PopUpModal";
+import useTasks from "../../services/useTasks";
+import LoadingScreen from "../Common/LoadingScreen";
 // const BASE_URL="test"
 const HomeScreen = () => {
   const dispatch = useDispatch();
   let [isLoading, setIsLoading] = useState(true);
   let [error, setError] = useState();
   let [bins, setBins] = useState([]);
-  const { isLoggedIn, setIsLoggedIn, userDetail, setUserDetail } = useLogin();
+
+  const { isLoggedIn, userDetail } = useSelector((state) => state.userReducer);
   const navigation = useNavigation();
   const { isOpen } = useSelector((state) => state.userReducer);
+  const groupService = useGroup();
 
-  const { groupInfo } = useGroup(userDetail.id);
+  const { groupInfo } = useSelector((state) => {
+    return state.groupReducer;
+  });
+
+  const popUpModalConfig = useSelector(
+    (state) => state.profileScreenReducer.popUpModalConfig
+  );
+  const [loading, setLoading] = useState(false);
+  const { fetchBinTasksAndDispatch } = useTasks();
 
   useFocusEffect(
     React.useCallback(() => {
-      if (!groupInfo || !groupInfo.id) {
+      setLoading(true);
+      if (!userDetail.id) {
         return;
       }
-      axios
-        .get(`${BASE_URL}/liveTogether/api/bins/${groupInfo.id}`)
-        // .then(res=> res.json())
-        .then((result) => {
-          setBins(result.data);
-          setIsLoading(false);
-        })
-        .catch((e) => {});
+      groupService.fetchGroup(userDetail.id).then((groupInfo) => {
+        dispatch(setGroupInfo(groupInfo));
+      });
+
+      if (!userDetail.group || !userDetail.group.id) {
+        return;
+      }
+      fetchBinTasksAndDispatch(userDetail.group.id).then((result) => {
+        setBins(result.data);
+        setLoading(false);
+      });
 
       return () => {};
-    }, [groupInfo])
+    }, [userDetail])
   );
-
-  useEffect(() => {
-    if (groupInfo && groupInfo.group && groupInfo.group.code) {
-      setUserDetail((state) => ({
-        ...state,
-        group: {
-          ...state.group,
-          id: groupInfo.group.id,
-        },
-      }));
-    }
-    return () => {};
-  }, [groupInfo]);
 
   const onDonePressed = (e, i) => {
     let binId = data[i].id;
@@ -83,21 +96,16 @@ const HomeScreen = () => {
   const hideModal = () => {
     dispatch(setInvitationModal(false));
   };
-  const getContent = () => {
-    if (isLoading) {
-      return (
-        <View>
-          <ActivityIndicator size="large" />
-        </View>
-      );
-    }
-  };
+
   const createNewGroup = () => {
     //CreateNewGroupScreen
     navigation.navigate("CreateNewGroupScreen");
   };
 
   const getScreen = () => {
+    if (loading) {
+      return <LoadingScreen />;
+    }
 
     if (isLoggedIn && (!userDetail.group || userDetail.group == null)) {
       return (
@@ -118,7 +126,9 @@ const HomeScreen = () => {
     }
 
     return (
-      <>
+      <Animated.View
+        entering={FadeIn}
+      >
         <View style={styles.box1}>
           <WasteDisposal groupInfo={groupInfo} bins={bins} setBins={setBins} />
         </View>
@@ -153,32 +163,33 @@ const HomeScreen = () => {
             <Button onPress={hideModal}>OK</Button>
           </ScrollView>
         </Modal>
-      </>
+      </Animated.View>
     );
   };
 
   return (
-    <ScrollView>
-      {/* First Page (Red) */}
-      {getScreen()}
+    <ScrollView
+      contentContainerStyle={{
+        flexGrow: 1,
+        justifyContent: "center",
+      }}
+    >
+      <View style={styles.container}>
+        {getScreen()}
+        <PopUpModal config={popUpModalConfig} />
+      </View>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    height: 600,
-    backgroundColor: "white",
-  },
+  container: {},
   row: {
     flexDirection: "row",
   },
   box1: {
     width: "100%",
-    height: 450,
+    height: "auto",
     backgroundColor: "white",
   },
   box2: {

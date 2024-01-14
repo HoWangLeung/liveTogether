@@ -6,22 +6,25 @@ import { useDispatch } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 // const BASE_URL="test"
 
-function useGroup(userId) {
-  const dispatch = useDispatch();
-  const [groupInfo, setGroupInfo] = useState({});
+function useGroup() {
+  // const dispatch = useDispatch();
+  // const [groupInfo, setGroupInfo] = useState({});
 
-  useFocusEffect(
-    React.useCallback(() => {
-      fetchGroup();
-      return () => {};
-    }, [])
-  );
+  // useFocusEffect(
+  //   React.useCallback(() => {
+  //     
+  //     fetchGroup();
+  //     
+  //     return () => {};
+  //   }, [userId])
+  // );
 
-  const fetchGroup = async () => {
-    
+  const fetchGroup = async (userId) => {
     try {
       let token = await AsyncStorage.getItem("accessToken");
-      if(!token){
+      
+      if (!token) {
+        
         return;
       }
       const config = {
@@ -30,17 +33,18 @@ function useGroup(userId) {
         },
       };
       const response = await axios.get(
-        `${BASE_URL}/api/userGroups?userId=${userId}`,config
+        `${BASE_URL}/api/userGroups?userId=${userId}`,
+        config
       );
-      const groupData = response.data;
-      setGroupInfo(groupData);
-    } catch (error) {
+
+      // setGroupInfo(groupData);
       
-    }
+      return response.data;
+    } catch (error) {}
   };
 
   return {
-    groupInfo,
+    fetchGroup,
   };
 }
 

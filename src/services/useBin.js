@@ -68,7 +68,7 @@ function useBin() {
             return result.data;
           })
           .catch((e) => {
-            console.log(e);
+            console.error(e);
           })
       );
     } catch (error) {}

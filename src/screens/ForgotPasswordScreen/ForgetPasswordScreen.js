@@ -11,20 +11,30 @@ import CustomButton from "../../components/CustomButton/CustomButton";
 import { Button, TextInput } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
 import Auth from "../../services/Auth";
+import { useDispatch, useSelector } from "react-redux";
+import { setPopUpModal } from "../../redux/actions";
+import PopUpModal from "../../components/Modal/PopUpModal";
 const ForgetPasswordScreen = () => {
-  const [email, setEmail] = useState("hkz88i00123@gmail.com");
+  const [email, setEmail] = useState("");
+  const { isLoggedIn, userDetail } = useSelector((state) => state.userReducer);
   const [code, setCode] = useState("");
   const navigation = useNavigation();
   const { height } = useWindowDimensions();
   const [requestSent, setRequestSent] = useState(false);
-
-  const confirmEmailScreen = () => {
-    
-  };
-
+  const dispatch = useDispatch();
+  const confirmEmailScreen = () => {};
+  const popUpModalConfig = useSelector(
+    (state) => state.profileScreenReducer.popUpModalConfig
+  );
   const onSendPressed = () => {
     if (!email) {
-      alert("You must enter a valid email");
+      dispatch(
+        setPopUpModal({
+          visible: true,
+          message: "You must enter a valid email.",
+          type: "error",
+        })
+      );
       return;
     }
     Auth.requestResetPassword({ email: email })
@@ -37,14 +47,15 @@ const ForgetPasswordScreen = () => {
   };
 
   const handleCodeChange = (newCode) => {
-    
+    if (newCode.length > 6) {
+      alert("The length of the code must be 6");
+      return;
+    }
     setCode(newCode);
     if (newCode.length === 6) {
-      Auth.verifyResetPasswordCode({ email, code:newCode })
+      Auth.verifyResetPasswordCode({ email, code: newCode })
         .then(() => {
-   
-          navigation.navigate("ResetPasswordScreen",{email})
-          
+          navigation.navigate("ResetPasswordScreen", { email });
         })
         .catch((e) => {
           if (e.response.data) {
@@ -71,9 +82,11 @@ const ForgetPasswordScreen = () => {
         value={email}
         onChangeText={(email) => setEmail(email)}
       />
-      <Button onPress={onSendPressed}>
+      <Button mode="contained" onPress={onSendPressed}>
         {requestSent ? "Resend" : "Submit"}
       </Button>
+
+      <PopUpModal config={popUpModalConfig} />
       {requestSent && (
         <View>
           <TextInput

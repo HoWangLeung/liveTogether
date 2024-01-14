@@ -8,34 +8,38 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import commonStyles from "../../utils/CommonStyle";
 import useBin from "../../services/useBin";
+import { useDispatch, useSelector } from "react-redux";
+import { setPopUpModal } from "../../redux/actions";
+import CustomTaskCard from "../../components/CustomCardContent/CustomTaskCard";
+import useTasks from "../../services/useTasks";
+import Utils from "../../utils/Utils";
+import { SUCCESS } from "../../utils/Constants";
 
 const WasteDisposal = ({ bins, setBins, groupInfo }) => {
   const navigation = useNavigation();
   const binService = useBin();
-  const onDonePressed = async (e, i) => {
-    let token = await AsyncStorage.getItem("accessToken");
-    const config = {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    };
-    let binId = bins[i].id;
+  const dispatch = useDispatch();
 
-    axios
-      .post(
-        `${BASE_URL}/liveTogether/api/bins/wasteDisposal/${binId}`,
-        {},
-        config
-      )
-      // .then(res=> res.json())
-      .then((result) => {
-        binService.fetchBins({
-          groupId:groupInfo.id
-        }).then((d)=>{
-          setBins(d)
-        })
-      })
-      .catch((e) => {});
+  const { isLoggedIn, userDetail } = useSelector((state) => state.userReducer);
+  const { fetchBinTasksAndDispatch, completeTask } = useTasks();
+  const onDonePressed = async (e, i) => {
+   
+    const task = bins[i];
+    const taskId = task.id;
+    let userId = userDetail.id;
+    console.log(taskId, userId);
+    completeTask(taskId, userId).then(() => {
+      fetchBinTasksAndDispatch(userDetail.group.id).then((res) => {
+        setBins(res.data);
+        Utils.showPopUp(
+          dispatch,
+          SUCCESS,
+          true,
+          "Successfully Completed",
+          `${userDetail.username} has been awarded ${task.score} points`
+        );
+      });
+    });
   };
 
   const onEditPressed = (e, i) => {
@@ -47,18 +51,20 @@ const WasteDisposal = ({ bins, setBins, groupInfo }) => {
   const getContent = () => {
     return (
       <View>
-        <Text style={styles.titleLarge} variant="titleLarge">Waste Disposal</Text>
+        <Text style={styles.titleLarge} variant="titleLarge">
+          Taking out Rubbish
+        </Text>
         <View style={[styles.container]}>
           {bins &&
             bins.map((item, i) => (
-              <CustomCardContent
-                onEditPressed={(e) => onEditPressed(e, i)}
+              <CustomTaskCard
                 groupInfo={groupInfo}
-                type="binRemoval"
+                onEditPressed={(e) => onEditPressed(e, i)}
                 onDonePressed={onDonePressed}
                 key={item.id}
                 i={i}
                 item={item}
+                type="bin"
               />
             ))}
         </View>

@@ -3,6 +3,7 @@ import React from "react";
 import { Button, Text, Card, Surface, Avatar, Modal } from "react-native-paper";
 import Utils from "../../utils/Utils";
 import { BIN_COLLECTION } from "../../utils/Constants";
+import { useSelector } from "react-redux";
 const CustomCardContent = ({
   item,
   onDonePressed,
@@ -13,10 +14,13 @@ const CustomCardContent = ({
   hideModal,
   groupInfo,
 }) => {
-  const getUserNameByType = (type, item) => {
+  const { isLoggedIn, userDetail } = useSelector((state) => state.userReducer);
+  
+  const getUser = (type, item) => {
     if (!groupInfo || !groupInfo.users) {
       return "";
     }
+
     let user;
     switch (type) {
       case "binCollection":
@@ -24,25 +28,31 @@ const CustomCardContent = ({
         if (!user) {
           return "";
         }
-        return formatName(user.email);
+
+        return user;
       case "binRemoval":
         user = groupInfo.users.find((d) => d.id === item.binRemoval.current);
         if (!user) {
           return "";
         }
-        return formatName(user.email);
+
+        return user;
       default:
-        break;
+        return "Default"
+   
     }
   };
 
-  const formatName = (email) => {
+  const formatName = (username) => {
+    if (!username) {
+      return "";
+    }
     const maxLength = 8;
-    if (email.length > maxLength) {
-      const truncatedEmail = email.substring(0, maxLength) + "...";
-      return truncatedEmail;
+    if (username.length > maxLength) {
+      const truncated = username.substring(0, maxLength) + "...";
+      return truncated;
     } else {
-      return email;
+      return username;
     }
   };
 
@@ -51,23 +61,29 @@ const CustomCardContent = ({
       <View style={styles.cardContent}>
         <View style={{ flexDirection: "row", flexBasis: "auto" }}>
           <Avatar.Icon
-            size={50}
+            size={45}
             icon="delete"
             color={item.color}
-            style={{ backgroundColor: "white" }}
+            style={{ backgroundColor: "white", marginRight: 5 }}
           />
         </View>
         <View style={{ flexDirection: "row", flexBasis: 200 }}>
           <View style={{ flex: 1 }}>
-            <Text>{item.displayName}</Text>
+            <Text style={{ fontWeight: 500 }}>{item.displayName}</Text>
             <View style={{ flexDirection: "row", marginTop: 5 }}>
-              <Text>{`${getUserNameByType(type, item)} 's turn`}</Text>
-              {type === "binCollection" && (
-                <Text style={{ marginLeft: 5 }}>{`${Utils.formatDate(
-                  item.binCollection.nextCollectionDate
-                )}`}</Text>
-              )}
+              <Text>{`${formatName(
+                getUser(type, item).username
+              )} 's turn`}</Text>
             </View>
+
+            {type === "binCollection" && (
+              <View style={{ flexDirection: "row", marginTop: 5 }}>
+                <Text>{`${Utils.formatDate(
+                  item.binCollection.nextCollectionDate,
+                  "DD-MM-YYYY"
+                )}`}</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -75,9 +91,9 @@ const CustomCardContent = ({
           <Button onPress={(e) => onEditPressed(e, i)}> Edit</Button>
         </View>
 
-        <View>
-          <Button onPress={(e) => onDonePressed(e, i)}> Done</Button>
-        </View>
+        <Button onPress={(e) => onDonePressed(e, i)}>
+          {getUser(type, item).id === userDetail.id ? "Done" : "Assist"}
+        </Button>
       </View>
     </Surface>
   );
@@ -101,7 +117,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginLeft: 20,
+    marginLeft: 5,
   },
 });
 

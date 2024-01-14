@@ -3,10 +3,16 @@ import React from "react";
 
 import axios from "axios";
 import { BASE_URL } from "@env";
+import Utils from "../utils/Utils";
+import { useDispatch } from "react-redux";
+import { setLoginDetail } from "../redux/actions";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 // const BASE_URL="test"
 
 const Auth = {
   login: async (username, password) => {
+    const token = await AsyncStorage.getItem("accessToken");
+    
     try {
       let url = `${BASE_URL}/api/auth/liveTogether/signin`;
 
@@ -24,7 +30,9 @@ const Auth = {
       throw error;
     }
   },
-  getUserProfile: async (token) => {
+
+  getUserProfile: async () => {
+    const token = await AsyncStorage.getItem("accessToken");
     const config = {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -34,6 +42,8 @@ const Auth = {
       const res = await axios.get(`${BASE_URL}/api/user/profile`, config);
 
       if (res.data) {
+      
+
         return res.data;
       }
     } catch (error) {
@@ -44,7 +54,7 @@ const Auth = {
   },
   signUp: async (payload) => {
     const res = await axios.post(
-      `${BASE_URL}/api/auth/liveTogether/signup?exchangeName=&routingKey=`,
+      `${BASE_URL}/api/auth/liveTogether/signup?exchangeName=topic-exchange&routingKey=queue.registration`,
       payload
     );
     if (res.data) {
@@ -69,16 +79,44 @@ const Auth = {
   },
   confirmResetPassword: async (payload) => {
     const res = await axios.post(
-      `${BASE_URL}/api/auth/liveTogether/confirmResetPassword/${payload.email}`,{
-        email:payload.email,
-        oldPassword:payload.oldPassword,
-        newPassword:payload.newPassword1
+      `${BASE_URL}/api/auth/liveTogether/confirmResetPassword/${payload.email}`,
+      {
+        email: payload.email,
+        oldPassword: payload.oldPassword,
+        newPassword: payload.newPassword1,
       }
     );
     if (res.data) {
       return res.data;
     }
   },
+  verifyRegistration: async (token) => {
+    const res = await axios.post(
+      `${BASE_URL}/api/auth/liveTogether/confirmRegistration?token=${token}`
+    );
+    if (res.data) {
+      return res.data;
+    }
+  },
+  updatePassword: async (payload) => {
+    const config = await Utils.getAccessTokenConfig();
+    const res = await axios.put(
+      `${BASE_URL}/api/auth/liveTogether/updatePassword`,
+      payload,
+      config
+    );
+    if (res.data) {
+      return res.data;
+    }
+  },
+  resendRegistrationVerification: async(email)=>{
+    const res = await axios.post(
+      `${BASE_URL}/api/auth/liveTogether/resendRegistration?email=${email}&exchangeName=topic-exchange&routingKey=queue.registrationResend`
+    );
+    if (res.data) {
+      return res.data;
+    }
+  }
 };
 
 export default Auth;

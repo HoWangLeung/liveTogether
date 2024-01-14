@@ -4,7 +4,7 @@ import { BASE_URL } from "@env";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 const GroupService = {
-  addNewGroup: async (group) => {
+  addNewGroup: async (payload) => {
     let token = await AsyncStorage.getItem("accessToken");
     const config = {
       headers: {
@@ -14,7 +14,7 @@ const GroupService = {
     let url = `${BASE_URL}/api/groups`;
     
     try {
-      let res = await axios.post(url, group, config);
+      let res = await axios.post(url, payload, config);
       
       return res;
     } catch (error) {
